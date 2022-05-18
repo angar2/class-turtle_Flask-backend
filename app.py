@@ -127,5 +127,14 @@ def post_article(user):
 
     return jsonify({"message": "success"})
 
+
+@app.route("/article", methods=["GET"])
+def get_article():
+    articles = list(db.articles.find())
+    for article in articles:
+        article["_id"] = str(article["_id"]) # objectId을 읽을 수 있는 값으로 변환
+
+    return jsonify({"message": "success", "articles": articles})    
+
 if __name__ == '__main__':
     app.run('0.0.0.0', port=5000, debug=True)
