@@ -105,5 +105,27 @@ def get_user_info(user):
     return jsonify({"message": "success", "email": result["email"]})
 
 
+# 
+@app.route("/article", methods=["POST"])
+@authorize
+def post_article(user):
+    data = json.loads(request.data)
+
+    result = db.users.find_one({
+        '_id': ObjectId(user["id"]) # DBmongo에서 objectId를 가져오기 위한 방법(pymongo와 함께 설치되는 bson의 'ObjectId()')
+    })
+    now = datetime.now().strftime("%H:%M:%S") # strftime: 해당 format code에 기초한 formatted string을 리턴함
+
+    doc = {
+        'title': data.get('title', None), # None: 값이 없으면 None값으로 처리함
+        'content': data.get('content', None),
+        'user_id': user['id'],
+        'user_email': result['email'],
+        'time': now,
+    }
+    db.articles.insert_one(doc)
+
+    return jsonify({"message": "success"})
+
 if __name__ == '__main__':
     app.run('0.0.0.0', port=5000, debug=True)
