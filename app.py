@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 import hashlib
 import json
+from bson import ObjectId
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 import jwt
@@ -57,7 +58,6 @@ def login():
         'password': hashed_password
     })
 
-    print(result)
     if result is None:
         return jsonify({"message": "일치하는 회원정보가 없습니다."})
 
@@ -69,6 +69,22 @@ def login():
 
     return jsonify({"message": "success", "token": token})
 
+
+# 유저 이름 가져오기
+@app.route("/getuserinfo", methods=["GET"])
+def get_user_info():
+    token = request.headers.get("Authorization")
+
+    if not token:
+        return jsonify({"message": "no token"}), 402
+
+    payload = jwt.decode(token, SECRET_KEY, algorithms=['HS256']) # 로그인 당시 만들었던 'payload' 객체를 반환
+    result = db.users.find_one({
+        '_id': ObjectId(payload["id"]) # DBmongo에서 objectId를 가져오기 위한 방법(pymongo와 함께 설치되는 bson의 'ObjectId()')
+    })
+    
+    return jsonify({"message": "success", "email": result["email"]})
+    
 
 if __name__ == '__main__':
     app.run('0.0.0.0', port=5000, debug=True)
