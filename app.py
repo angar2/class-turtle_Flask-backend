@@ -1,8 +1,9 @@
 from datetime import datetime, timedelta
+from functools import wraps
 import hashlib
 import json
 from bson import ObjectId
-from flask import Flask, jsonify, request
+from flask import Flask, abort, jsonify, request
 from flask_cors import CORS
 import jwt
 from pymongo import MongoClient
@@ -14,8 +15,25 @@ cors = CORS(app, resources={r"*": {"origins": "*"}})
 client = MongoClient('localhost', 27017)
 db = client.turtlegram
 
+
+def authorize(f):
+    @wraps(f) # decorator 함수인 'authorize()'를 여러 함수에서 사용하기 위함(import 필요)
+    def decorated_function():
+        if not 'Authorization' in request.headers:
+            abort(401) # 중단(import 해야함)
+        token = request.headers['Authorization']
+        try:
+            user = jwt.decode(token, SECRET_KEY, algorithms = ['HS256']) # 로그인 당시 만들었던 'payload' 객체를 반환
+        except:
+            abort(401)
+        return f(user)
+    return decorated_function
+
+
 @app.route("/")
-def hello_world():
+@authorize
+def hello_world(user):
+    print(user)
     return jsonify({'msg': 'success'})
 
 
@@ -72,19 +90,20 @@ def login():
 
 # 유저 이름 가져오기
 @app.route("/getuserinfo", methods=["GET"])
-def get_user_info():
-    token = request.headers.get("Authorization")
+@authorize
+def get_user_info(user):
+    # token = request.headers.get("Authorization")
 
-    if not token:
-        return jsonify({"message": "no token"}), 402
+    # if not token:
+    #     return jsonify({"message": "no token"}), 402
 
-    payload = jwt.decode(token, SECRET_KEY, algorithms=['HS256']) # 로그인 당시 만들었던 'payload' 객체를 반환
+    # user = jwt.decode(token, SECRET_KEY, algorithms=['HS256']) # 로그인 당시 만들었던 'payload' 객체를 반환
     result = db.users.find_one({
-        '_id': ObjectId(payload["id"]) # DBmongo에서 objectId를 가져오기 위한 방법(pymongo와 함께 설치되는 bson의 'ObjectId()')
+        '_id': ObjectId(user["id"]) # DBmongo에서 objectId를 가져오기 위한 방법(pymongo와 함께 설치되는 bson의 'ObjectId()')
     })
     
     return jsonify({"message": "success", "email": result["email"]})
-    
+
 
 if __name__ == '__main__':
     app.run('0.0.0.0', port=5000, debug=True)
