@@ -105,7 +105,7 @@ def get_user_info(user):
     return jsonify({"message": "success", "email": result["email"]})
 
 
-# 
+# 게시물 업로드
 @app.route("/article", methods=["POST"])
 @authorize
 def post_article(user):
@@ -128,13 +128,24 @@ def post_article(user):
     return jsonify({"message": "success"})
 
 
+# 게시물 불러오기
 @app.route("/article", methods=["GET"])
 def get_article():
     articles = list(db.articles.find())
     for article in articles:
         article["_id"] = str(article["_id"]) # objectId을 읽을 수 있는 값으로 변환
 
-    return jsonify({"message": "success", "articles": articles})    
+    return jsonify({"message": "success", "articles": articles})
+
+
+# 특정 게시물 불러오기
+@app.route("/article/<article_id>", methods=["GET"]) # 변수명으로 url을 받음
+def get_article_detail(article_id):
+    article = db.articles.find_one({"_id": ObjectId(article_id)})
+    article["_id"] = str(article["_id"])
+
+    return jsonify({"message": "success", "article": article})
+
 
 if __name__ == '__main__':
     app.run('0.0.0.0', port=5000, debug=True)
