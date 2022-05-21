@@ -35,7 +35,7 @@ def authorize(f):
 @app.route("/")
 @authorize
 def hello_world(user):
-    print(user)
+    # print(user)
     return jsonify({'msg': 'success'})
 
 
@@ -130,7 +130,7 @@ def post_article(user):
     return jsonify({"message": "success"})
 
 
-# 게시물 불러오기
+# 전체 게시물 데이터 불러오기
 @app.route("/article", methods=["GET"])
 def get_article():
     articles = list(db.articles.find())
@@ -140,13 +140,33 @@ def get_article():
     return jsonify({"message": "success", "articles": articles})
 
 
-# 특정 게시물 불러오기
+# 특정 게시물 데이터 불러오기
 @app.route("/article/<article_id>", methods=["GET"]) # 변수명으로 url을 받음
 def get_article_detail(article_id):
     article = db.articles.find_one({"_id": ObjectId(article_id)})
     article["_id"] = str(article["_id"])
 
     return jsonify({"message": "success", "article": article})
+
+
+# 게시글 업데이트
+@app.route("/article/<article_id>", methods=["PATCH"])
+@authorize
+def patch_article_detail(user, article_id):
+    data = json.loads(request.data)
+    title = data.get("title")
+    content = data.get("content")
+
+    article = db.articles.update_one({"_id": ObjectId(article_id), "user_id": user["id"]}, {
+        "$set": {"title": title, "content": content}
+    })
+
+    # print(article.matched_count) # matched_count: doc의 개수를 검색하는 기능(업데이트 성공할 경우: 1, 성공하지 못할 경우: 0 
+
+    if article.matched_count:
+        return jsonify({"message": "success"})
+    else:
+        return jsonify({"message": "fail"}), 403 # else도 결국 성공임으로 'status:200'을 보여줄 것이기에 'status:403'을 띄워줌
 
 
 if __name__ == '__main__':
