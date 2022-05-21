@@ -18,7 +18,9 @@ db = client.turtlegram
 
 def authorize(f):
     @wraps(f) # decorator 함수인 'authorize()'를 여러 함수에서 사용하기 위함(import 필요)
-    def decorated_function():
+    # *(argumants): 가변인자를 위한 변수로서 함수에 인자를 몇 개 받을지 모르는 경우 list형태로 인자를 얼마든지 담아줌
+    # **(keyword argumants): '*'와 마찬가지로 가변인자를 받으며 Key와 value의 dic형태로 담아줌
+    def decorated_function(*args, **kwargs): 
         if not 'Authorization' in request.headers:
             abort(401) # 중단(import 해야함)
         token = request.headers['Authorization']
@@ -26,7 +28,7 @@ def authorize(f):
             user = jwt.decode(token, SECRET_KEY, algorithms = ['HS256']) # 로그인 당시 만들었던 'payload' 객체를 반환
         except:
             abort(401)
-        return f(user)
+        return f(user, *args, **kwargs)
     return decorated_function
 
 
@@ -133,7 +135,7 @@ def post_article(user):
 def get_article():
     articles = list(db.articles.find())
     for article in articles:
-        article["_id"] = str(article["_id"]) # objectId을 읽을 수 있는 값으로 변환
+        article["_id"] = str(article["_id"]) # objectId을 읽을 수 있는 값으로 변환(json으로 넘기기 위해선 필수)
 
     return jsonify({"message": "success", "articles": articles})
 
