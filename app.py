@@ -144,12 +144,14 @@ def get_article():
 @app.route("/article/<article_id>", methods=["GET"]) # 변수명으로 url을 받음
 def get_article_detail(article_id):
     article = db.articles.find_one({"_id": ObjectId(article_id)})
-    article["_id"] = str(article["_id"])
+    if article:
+        article["_id"] = str(article["_id"])
+        return jsonify({"message": "success", "article": article})
+    else:
+        return jsonify({"message": "fail"}), 404 # else도 결국 성공임으로 'status:200'을 보여줄 것이기에 'status:404'을 띄워줌  
 
-    return jsonify({"message": "success", "article": article})
 
-
-# 게시글 업데이트
+# 게시글 수정
 @app.route("/article/<article_id>", methods=["PATCH"])
 @authorize
 def patch_article_detail(user, article_id):
@@ -164,6 +166,21 @@ def patch_article_detail(user, article_id):
     # print(article.matched_count) # matched_count: doc의 개수를 검색하는 기능(업데이트 성공할 경우: 1, 성공하지 못할 경우: 0 
 
     if article.matched_count:
+        return jsonify({"message": "success"})
+    else:
+        return jsonify({"message": "fail"}), 403 # else도 결국 성공임으로 'status:200'을 보여줄 것이기에 'status:403'을 띄워줌
+
+
+# 게시글 삭제
+@app.route("/article/<article_id>", methods=["DELETE"])
+@authorize
+def delete_article_detail(user, article_id):
+
+    article = db.articles.delete_one({"_id": ObjectId(article_id), "user_id": user["id"]})
+
+    print(article.deleted_count) # deleted_count: doc의 삭제된 개수를 검색하는 기능(삭제에 성공할 경우: 1, 성공하지 못할 경우: 0 
+
+    if article.deleted_count:
         return jsonify({"message": "success"})
     else:
         return jsonify({"message": "fail"}), 403 # else도 결국 성공임으로 'status:200'을 보여줄 것이기에 'status:403'을 띄워줌
