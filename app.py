@@ -94,17 +94,11 @@ def login():
 @app.route("/getuserinfo", methods=["GET"])
 @authorize
 def get_user_info(user):
-    # token = request.headers.get("Authorization")
-
-    # if not token:
-    #     return jsonify({"message": "no token"}), 402
-
-    # user = jwt.decode(token, SECRET_KEY, algorithms=['HS256']) # 로그인 당시 만들었던 'payload' 객체를 반환
     result = db.users.find_one({
         '_id': ObjectId(user["id"]) # DBmongo에서 objectId를 가져오기 위한 방법(pymongo와 함께 설치되는 bson의 'ObjectId()')
     })
     
-    return jsonify({"message": "success", "email": result["email"]})
+    return jsonify({"message": "success", "email": result["email"], "id": user["id"]})
 
 
 # 게시물 업로드
