@@ -87,7 +87,7 @@ def login():
         'exp': datetime.utcnow() + timedelta(seconds = 60 * 60 * 24)  # 유지시간 = 초 * 분 * 시간
     }
     token = jwt.encode(payload, SECRET_KEY, algorithm='HS256')
-
+    
     return jsonify({"message": "success", "token": token})
 
 
