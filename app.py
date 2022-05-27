@@ -7,6 +7,7 @@ from flask import Flask, abort, jsonify, request
 from flask_cors import CORS
 import jwt
 from pymongo import MongoClient
+from bson.json_util import loads, dumps
 
 SECRET_KEY = 'turtle' # token 생성 시 사용
 
@@ -138,8 +139,10 @@ def get_article():
 @app.route("/article/<article_id>", methods=["GET"]) # 변수명으로 url을 받음
 def get_article_detail(article_id):
     article = db.articles.find_one({"_id": ObjectId(article_id)})
+    comments = list(db.comments.find({"article_id": article_id})) # 해당 article에 달린 comment들을 articles에 담아서 한번에 보내주고자 함
     if article:
         article["_id"] = str(article["_id"])
+        article["comments"] = json.loads(dumps(comments)) # dumps: ObjectId를 json 형식으로 만드는 방법 중 하나
         return jsonify({"message": "success", "article": article})
     else:
         return jsonify({"message": "fail"}), 404 # else도 결국 성공임으로 'status:200'을 보여줄 것이기에 'status:404'을 띄워줌  
@@ -179,6 +182,34 @@ def delete_article_detail(user, article_id):
     else:
         return jsonify({"message": "fail"}), 403 # else도 결국 성공임으로 'status:200'을 보여줄 것이기에 'status:403'을 띄워줌
 
+
+# 댓글 작성
+@app.route("/article/<article_id>/comment", methods=["POST"])
+@authorize
+def post_comment(user, article_id):
+    data = json.loads(request.data)
+    db_user = db.users.find_one({"_id": ObjectId(user.get('id'))})
+    now = datetime.now().strftime("%H:%M:%S")
+
+    doc = {
+        'article_id': article_id,
+        'content': data.get('content', None),
+        'user_id': user['id'],
+        'user_email': db_user['email'],
+        'time': now
+    }
+
+    db.comments.insert_one(doc)
+
+    return jsonify({"message": "success"})
+
+
+# 댓글 불러오기
+@app.route("/article/<article_id>/comment", methods=["GET"])
+def get_comment(article_id):
+    comments = list(db.comment.find({"article_id": article_id}))
+    json_comments = json.loads(dumps(comments))
+    return jsonify({"message": "success", "comments": json_comments})
 
 if __name__ == '__main__':
     app.run('0.0.0.0', port=5000, debug=True)
