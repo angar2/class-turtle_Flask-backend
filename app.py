@@ -175,7 +175,7 @@ def delete_article_detail(user, article_id):
 
     article = db.articles.delete_one({"_id": ObjectId(article_id), "user_id": user["id"]})
 
-    print(article.deleted_count) # deleted_count: doc의 삭제된 개수를 검색하는 기능(삭제에 성공할 경우: 1, 성공하지 못할 경우: 0 
+    # print(article.deleted_count) # deleted_count: doc의 삭제된 개수를 검색하는 기능(삭제에 성공할 경우: 1, 성공하지 못할 경우: 0 
 
     if article.deleted_count:
         return jsonify({"message": "success"})
