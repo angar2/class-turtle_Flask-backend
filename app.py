@@ -268,6 +268,24 @@ def user_protile(user_id):
     return jsonify({"messege": "success", "user": user})
 
 
+# 유저 데이터 불러오기
+@app.route("/user/<user_id>/follow", methods=["POST"])
+@authorize
+def post_follow(user, user_id):
+    follower = db.users.find_one(
+        {"_id": ObjectId(user['id'])}, {"password": False}) # 팔로우 하는 유저
+    followed = db.users.find_one(
+        {"_id": ObjectId(user_id)}, {"password": False}) # 팔로우 받은 유저
+   
+    doc = {
+        "follower_id": str(follower['_id']),
+        "followed_id": str(followed['_id'])
+    }
+
+    follow = db.follows.insert_one(doc)
+
+    return jsonify({"messege": "success", "follow": json.loads(dumps(doc))})
+
 
 if __name__ == '__main__':
     app.run('0.0.0.0', port=5000, debug=True)
