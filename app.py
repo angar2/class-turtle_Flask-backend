@@ -140,9 +140,11 @@ def get_article():
 def get_article_detail(article_id):
     article = db.articles.find_one({"_id": ObjectId(article_id)})
     comments = list(db.comments.find({"article_id": article_id})) # 해당 article에 달린 comment들을 articles에 담아서 한번에 보내주고자 함
+    likes = list(db.likes.find({"article_id": article_id})) # 해당 article에 달린 liks의 개수를 articles에 담아서 한번에 보내주고자 함
     if article:
         article["_id"] = str(article["_id"])
         article["comments"] = json.loads(dumps(comments)) # dumps: ObjectId를 json 형식으로 만드는 방법 중 하나
+        article["likes_count"] = len(likes) # likes의 개수를 추가
         return jsonify({"message": "success", "article": article})
     else:
         return jsonify({"message": "fail"}), 404 # else도 결국 성공임으로 'status:200'을 보여줄 것이기에 'status:404'을 띄워줌  
@@ -241,6 +243,18 @@ def delete_like(user, article_id):
         return jsonify({"message": "success"})
     else:
         return jsonify({"message": "fail"}), 400
+
+
+# 좋아요 불러오기(해당 유저의 좋아요 여부 체크)
+@app.route("/article/<article_id>/like", methods=["GET"])
+@authorize
+def get_like(user, article_id):
+    result = db.likes.find_one({"article_id": article_id, "user_id": user['id']})
+    
+    if result:
+        return jsonify({"message": "success", "liked": True})
+    else:
+        return jsonify({"message": "fail", "liked": False})
 
 
 if __name__ == '__main__':
