@@ -211,5 +211,37 @@ def get_comment(article_id):
     json_comments = json.loads(dumps(comments))
     return jsonify({"message": "success", "comments": json_comments})
 
+
+# 좋아요 올리기
+@app.route("/article/<article_id>/like", methods=["POST"])
+@authorize
+def post_like(user, article_id):
+    db_user = db.users.find_one({'_id':ObjectId(user.get('id'))})
+    print(article_id)
+    now = datetime.now().strftime("%H:%M:%S")
+
+    doc = {
+        'article_id': article_id,
+        'user_id': user['id'],
+        'user_email': db_user['email'],
+        'time': now
+    }
+    db.likes.insert_one(doc)
+
+    return jsonify({"message": "success"})
+
+
+# 좋아요 취소하기
+@app.route("/article/<article_id>/like", methods=["DELETE"])
+@authorize
+def delete_like(user, article_id):
+    result = db.likes.delete_one({"article_id": article_id, "user_id": user['id']})
+    
+    if result.deleted_count:
+        return jsonify({"message": "success"})
+    else:
+        return jsonify({"message": "fail"}), 400
+
+
 if __name__ == '__main__':
     app.run('0.0.0.0', port=5000, debug=True)
