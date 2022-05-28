@@ -257,5 +257,17 @@ def get_like(user, article_id):
         return jsonify({"message": "fail", "liked": False})
 
 
+# 유저 데이터 불러오기
+@app.route("/user/<user_id>", methods=["GET"])
+def user_protile(user_id):
+    user = db.users.find_one({"_id": ObjectId(user_id)}, {"password": False})
+    user_articles = list(db.articles.find({"user_id": user_id}))
+    user['articles'] = user_articles # 유저 정보에 해당 유저가 작성한 게시글 추가
+    user = json.loads(dumps(user)) # 유저의 ObjectId를 응답할 수 있도록 함
+
+    return jsonify({"messege": "success", "user": user})
+
+
+
 if __name__ == '__main__':
     app.run('0.0.0.0', port=5000, debug=True)
