@@ -58,7 +58,9 @@ def sign_up():
 
     doc = {
         'email': email,
-        'password': hashed_password
+        'password': hashed_password,
+        # 'follower_count': 0,
+        # 'followed_count': 0
     }
     user = db.users.insert_one(doc)
 
@@ -263,9 +265,15 @@ def user_protile(user_id):
     user = db.users.find_one({"_id": ObjectId(user_id)}, {"password": False})
     user_articles = list(db.articles.find({"user_id": user_id}))
     user['articles'] = user_articles # 유저 정보에 해당 유저가 작성한 게시글 추가
-    user = json.loads(dumps(user)) # 유저의 ObjectId를 응답할 수 있도록 함
 
-    return jsonify({"messege": "success", "user": user})
+    user_followers = list(db.follows.find(
+        {"followed_id": user_id}, {"_id": False, "followed_id": False}))
+    user_following = list(db.follows.find(
+        {"follower_id": user_id}, {"_id": False, "follower_id": False}))
+    user['followers'] = user_followers
+    user['following'] = user_following
+
+    return jsonify({"messege": "success", "user": json.loads(dumps(user))}) # 유저의 ObjectId를 응답할 수 있도록 함
 
 
 # 유저 데이터 불러오기
@@ -282,9 +290,13 @@ def post_follow(user, user_id):
         "followed_id": str(followed['_id'])
     }
 
-    follow = db.follows.insert_one(doc)
-
-    return jsonify({"messege": "success", "follow": json.loads(dumps(doc))})
+    result = db.follows.find_one(doc) # 결과에 따라 팔로우/취소 여부 결정
+    if not result:
+        db.follows.insert_one(doc)
+        return jsonify({"messege": "success", "follow": json.loads(dumps(doc))})
+    else:
+        db.follows.delete_one(doc)
+        return jsonify({"messege": "deleted", "follow": json.loads(dumps(doc))})
 
 
 if __name__ == '__main__':
